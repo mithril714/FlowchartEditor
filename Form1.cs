@@ -144,6 +144,11 @@ namespace FlowchartEditor
                 btnDeleteConn, btnSaveJson, btnLoadJson, btnExport,
                 canvas
             });
+
+            var btnAutoConnect = new Button { Text = "Auto‑Connect", Location = new Point(10, 510) };
+            btnAutoConnect.Click += BtnAutoConnect_Click;
+            Controls.Add(btnAutoConnect);
+
         }
 
         private void BtnAddNode_Click(object _, EventArgs e)
@@ -273,6 +278,21 @@ namespace FlowchartEditor
                     }
                 }
         */
+
+        private void BtnAutoConnect_Click(object _, EventArgs e)
+        {
+            // ID順にノードをソートして接続を作成
+            var ordered = nodes.OrderBy(n => n.Id).ToList();
+            connections.Clear();
+            for (int i = 0; i < ordered.Count - 1; i++)
+            {
+                var from = ordered[i];
+                var to = ordered[i + 1];
+                connections.Add(new Connection { FromId = from.Id, ToId = to.Id });
+            }
+            UpdateConnectionList();
+            canvas.Invalidate();
+        }
 
         private void UpdateConnectionList()
         {

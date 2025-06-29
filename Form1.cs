@@ -55,6 +55,36 @@ namespace FlowchartEditor
         public List<Connection> Connections { get; set; }
     }
 
+    public static class Prompt
+    {
+        public static string ShowDialog(string text, string caption, string defaultValue = "")
+        {
+            using (var prompt = new Form())
+            {
+                prompt.Width = 400;
+                prompt.Height = 150;
+                prompt.Text = caption;
+                prompt.FormBorderStyle = FormBorderStyle.FixedDialog;
+                prompt.StartPosition = FormStartPosition.CenterParent;
+                prompt.MinimizeBox = false;
+                prompt.MaximizeBox = false;
+
+                var lbl = new Label() { Left = 10, Top = 10, Text = text, AutoSize = true };
+                var txt = new TextBox() { Left = 10, Top = 35, Width = 360, Text = defaultValue };
+                var btnOk = new Button() { Text = "OK", DialogResult = DialogResult.OK, Left = 210, Width = 80, Top = 70 };
+                var btnCancel = new Button() { Text = "Cancel", DialogResult = DialogResult.Cancel, Left = 295, Width = 80, Top = 70 };
+
+                prompt.Controls.Add(lbl);
+                prompt.Controls.Add(txt);
+                prompt.Controls.Add(btnOk);
+                prompt.Controls.Add(btnCancel);
+                prompt.AcceptButton = btnOk;
+                prompt.CancelButton = btnCancel;
+
+                return prompt.ShowDialog() == DialogResult.OK ? txt.Text : null;
+            }
+        }
+    }
     public partial class Form1 : Form
     {
         private List<Node> nodes = new List<Node>();
@@ -135,7 +165,7 @@ namespace FlowchartEditor
             canvas.MouseDown += Canvas_MouseDown;
             canvas.MouseMove += Canvas_MouseMove;
             canvas.MouseUp += Canvas_MouseUp;
-//            canvas.MouseDoubleClick += Canvas_MouseDoubleClick;
+            canvas.MouseDoubleClick += Canvas_MouseDoubleClick;
 
             Controls.AddRange(new Control[]
             {
@@ -419,6 +449,35 @@ namespace FlowchartEditor
         private void Canvas_MouseUp(object sender, MouseEventArgs e)
         {
             draggingNode = null;
+        }
+
+        private void Canvas_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            // ノードをダブルクリックしたときの処理
+            var node = nodes.FirstOrDefault(n => n.Bounds.Contains(e.Location));
+            if (node != null)
+            {
+                // ID を編集するダイアログ
+                string idInput = Prompt.ShowDialog(
+                    $"Edit ID for '{node.Text}'", "Edit Node ID", node.Id.ToString());
+                if (int.TryParse(idInput, out int newId))
+                {
+                    // 他のノードと重複していないかチェック
+                    if (!nodes.Any(n => n != node && n.Id == newId))
+                    {
+                        node.Id = newId;
+                        // レイアウトなどに応じて再ソートしたい場合はここで対応
+                        lstNodes.Items.Clear();
+                        foreach (var n in nodes.OrderBy(n => n.Id))
+                            lstNodes.Items.Add(n);
+                        canvas.Invalidate();
+                    }
+                    else
+                    {
+                        MessageBox.Show("そのIDは既に使われています。");
+                    }
+                }
+            }
         }
     }
 }
